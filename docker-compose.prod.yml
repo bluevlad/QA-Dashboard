@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: qa-dashboard-backend
+    restart: unless-stopped
+    ports:
+      - "9095:9095"
+    environment:
+      - QD_DB_HOST=${QD_DB_HOST}
+      - QD_DB_PORT=${QD_DB_PORT}
+      - QD_DB_NAME=${QD_DB_NAME}
+      - QD_DB_USER=${QD_DB_USER}
+      - QD_DB_PASSWORD=${QD_DB_PASSWORD}
+      - QD_CORS_ORIGINS=${QD_CORS_ORIGINS}
+      - QD_LOG_DIR=/app/logs
+    volumes:
+      - /Users/rainend/DockerData/qa-dashboard/logs:/app/logs
+    networks:
+      - qa-dashboard-network
+      - database-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: qa-dashboard-frontend
+    restart: unless-stopped
+    ports:
+      - "4095:4095"
+    depends_on:
+      - backend
+    networks:
+      - qa-dashboard-network
+
+networks:
+  qa-dashboard-network:
+    driver: bridge
+  database-network:
+    external: true

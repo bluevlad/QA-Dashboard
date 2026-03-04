@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # Sync interval in seconds
     SYNC_INTERVAL: int = 60
 
+    # CORS
+    CORS_ORIGINS: str = "*"
+
     model_config = {
         "env_file": ".env",
         "env_prefix": "QD_",

@@ -1,0 +1,88 @@
+name: Deploy QA-Dashboard (macOS)
+
+on:
+  push:
+    branches: [prod]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".gitignore"
+      - "LICENSE"
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, macos, orbstack]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create .env from secrets
+        run: |
+          cat > .env << EOF
+          QD_DB_HOST=${{ secrets.QD_DB_HOST }}
+          QD_DB_PORT=${{ secrets.QD_DB_PORT }}
+          QD_DB_NAME=${{ secrets.QD_DB_NAME }}
+          QD_DB_USER=${{ secrets.QD_DB_USER }}
+          QD_DB_PASSWORD=${{ secrets.QD_DB_PASSWORD }}
+          QD_CORS_ORIGINS=${{ secrets.QD_CORS_ORIGINS }}
+          EOF
+
+      - name: Stop existing containers
+        run: |
+          docker compose -f docker-compose.prod.yml stop || true
+          docker compose -f docker-compose.prod.yml rm -f || true
+
+      - name: Ensure shared PostgreSQL is running
+        run: |
+          docker exec postgresql pg_isready -U postgres || {
+            echo "ERROR: Shared PostgreSQL container is not running"
+            exit 1
+          }
+
+      - name: Build and start containers
+        run: |
+          docker compose -f docker-compose.prod.yml up -d --build
+
+      - name: Backend health check
+        run: |
+          echo "Waiting for backend..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9095/api/health > /dev/null 2>&1; then
+              echo "Backend is healthy!"
+              exit 0
+            fi
+            echo "Attempt $i/30 - waiting 2s..."
+            sleep 2
+          done
+          echo "ERROR: Backend health check failed"
+          docker compose -f docker-compose.prod.yml logs backend
+          exit 1
+
+      - name: Frontend verification
+        run: |
+          echo "Waiting for frontend..."
+          for i in $(seq 1 15); do
+            if curl -sf http://localhost:4095/ > /dev/null 2>&1; then
+              echo "Frontend is serving!"
+              exit 0
+            fi
+            echo "Attempt $i/15 - waiting 2s..."
+            sleep 2
+          done
+          echo "ERROR: Frontend verification failed"
+          docker compose -f docker-compose.prod.yml logs frontend
+          exit 1
+
+      - name: Deployment summary
+        run: |
+          echo "=========================================="
+          echo "  QA-Dashboard Deployment Complete"
+          echo "=========================================="
+          echo "  Backend:  http://localhost:9095/api/health"
+          echo "  Frontend: http://localhost:4095/"
+          echo "=========================================="
+          docker compose -f docker-compose.prod.yml ps
+
+      - name: Cleanup unused images
+        run: docker image prune -f
