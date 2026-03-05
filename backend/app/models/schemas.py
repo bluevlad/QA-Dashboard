@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-# --- Request (Input) models ---
+# --- Ingest Request (QA Agent -> Dashboard) ---
 
 
 class EndpointCheckIn(BaseModel):
@@ -18,13 +18,16 @@ class EndpointCheckIn(BaseModel):
 class HealthCheckIn(BaseModel):
     projectName: str
     healthy: bool
-    checkedAt: datetime
+    checkedAt: str
     endpoints: list[EndpointCheckIn] = []
 
 
 class TestFailureIn(BaseModel):
     testName: str
-    error: str
+    suiteName: str | None = None
+    filePath: str | None = None
+    errorMessage: str | None = None
+    category: str | None = None
 
 
 class TestResultIn(BaseModel):
@@ -37,7 +40,7 @@ class TestResultIn(BaseModel):
     total: int = 0
     exitCode: int = 0
     durationMs: int = 0
-    failures: list[TestFailureIn] = []
+    failures: list[str] = []
 
 
 class IssueReportIn(BaseModel):
@@ -46,6 +49,14 @@ class IssueReportIn(BaseModel):
     issueUrl: str | None = None
     issueNumber: int | None = None
     error: str | None = None
+
+
+class SuggestionIn(BaseModel):
+    ruleId: str
+    severity: str = "info"
+    title: str
+    description: str | None = None
+    projectName: str | None = None
 
 
 class RunSummaryIn(BaseModel):
@@ -58,90 +69,29 @@ class RunSummaryIn(BaseModel):
     totalSkipped: int = 0
 
 
-class RunImportRequest(BaseModel):
-    runId: str = Field(..., max_length=20)
-    startedAt: datetime
-    finishedAt: datetime
+class IngestRequest(BaseModel):
+    runId: str
+    startedAt: str
+    finishedAt: str
     durationMs: int
-    summary: RunSummaryIn = RunSummaryIn()
-    healthChecks: list[HealthCheckIn] = []
+    healthResults: list[HealthCheckIn] = []
     testResults: list[TestResultIn] = []
-    issueReports: list[IssueReportIn] = []
+    issueResults: list[IssueReportIn] | None = None
+    failureDetails: list[TestFailureIn] | None = None
+    suggestions: list[SuggestionIn] | None = None
+    summary: RunSummaryIn = RunSummaryIn()
 
 
-class BulkImportRequest(BaseModel):
-    runs: list[RunImportRequest]
+# --- API Response models ---
 
-
-class ImportResult(BaseModel):
-    success: bool
-    runId: str
-    message: str
-
-
-class BulkImportResult(BaseModel):
-    total: int
-    succeeded: int
-    failed: int
-    results: list[ImportResult]
-
-
-class DeleteResult(BaseModel):
-    success: bool
-    runId: str
-    message: str
-
-
-# --- Response models ---
 
 class HealthResponse(BaseModel):
     status: str
     version: str
+    database: str = "unknown"
 
 
-class EndpointCheckOut(BaseModel):
-    url: str
-    label: str
-    healthy: bool
-    status_code: int | None
-    response_time_ms: float
-    error: str | None
-
-
-class HealthCheckOut(BaseModel):
-    project_name: str
-    healthy: bool
-    checked_at: datetime
-    endpoints: list[EndpointCheckOut] = []
-
-
-class TestFailure(BaseModel):
-    testName: str
-    error: str
-
-
-class TestRunOut(BaseModel):
-    project_name: str
-    executed: bool
-    skipped_reason: str | None
-    passed: int
-    failed: int
-    skipped: int
-    total: int
-    exit_code: int
-    duration_ms: int
-    failures: list[TestFailure] = []
-
-
-class IssueReportOut(BaseModel):
-    project_name: str
-    action: str
-    issue_url: str | None
-    issue_number: int | None
-    error: str | None
-
-
-class RunSummary(BaseModel):
+class RunListItem(BaseModel):
     id: int
     run_id: str
     started_at: datetime
@@ -149,21 +99,15 @@ class RunSummary(BaseModel):
     duration_ms: int
     total_projects: int
     healthy_projects: int
-    tested_projects: int
+    tested_projects: int = 0
     total_tests: int
     total_passed: int
     total_failed: int
-    total_skipped: int
-
-
-class RunDetail(RunSummary):
-    health_checks: list[HealthCheckOut] = []
-    test_results: list[TestRunOut] = []
-    issue_reports: list[IssueReportOut] = []
+    total_skipped: int = 0
 
 
 class PaginatedRuns(BaseModel):
-    items: list[RunSummary]
+    items: list[RunListItem]
     total: int
     page: int
     size: int
@@ -172,23 +116,20 @@ class PaginatedRuns(BaseModel):
 
 class ProjectStatus(BaseModel):
     project_name: str
-    last_run_id: str
-    last_run_at: datetime
-    healthy: bool
-    last_passed: int
-    last_failed: int
-    last_total: int
-    last_duration_ms: int
+    last_checked_at: datetime | None = None
+    last_healthy: bool | None = None
+    total_runs: int = 0
+    avg_pass_rate: float | None = None
+    recent_failures: int = 0
 
 
 class ProjectHistoryItem(BaseModel):
-    run_id: str
-    started_at: datetime
+    date: str
     healthy: bool
-    passed: int
-    failed: int
-    total: int
-    duration_ms: int
+    passed: int = 0
+    failed: int = 0
+    total: int = 0
+    responseTimeMs: float | None = None
 
 
 class TrendPoint(BaseModel):
@@ -208,7 +149,19 @@ class DurationTrendPoint(BaseModel):
 
 class DashboardSummary(BaseModel):
     total_runs: int
-    latest_run: RunSummary | None
+    latest_run: RunListItem | None
     projects: list[ProjectStatus]
     pass_rate_trend: list[TrendPoint]
-    recent_runs: list[RunSummary]
+    recent_runs: list[RunListItem]
+
+
+class ImportLogItem(BaseModel):
+    id: int
+    run_id: str
+    source: str
+    client_ip: str | None
+    received_at: datetime
+    status: str
+    error_message: str | None
+    request_size: int
+    completed_at: datetime | None

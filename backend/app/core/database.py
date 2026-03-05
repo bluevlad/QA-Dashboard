@@ -20,11 +20,21 @@ async def init_db() -> None:
     settings = get_settings()
 
     _pool = await asyncpg.create_pool(
-        dsn=settings.dsn,
+        dsn=settings.DATABASE_URL,
         min_size=2,
         max_size=10,
     )
-    logger.info("Database pool initialized: %s/%s", settings.DB_HOST, settings.DB_NAME)
+    logger.info("Database pool initialized: %s", settings.DATABASE_URL.split("@")[-1])
+
+    from app.models.database_models import TABLES_DDL
+
+    async with _pool.acquire() as conn:
+        for ddl in TABLES_DDL:
+            try:
+                await conn.execute(ddl)
+            except asyncpg.exceptions.InsufficientPrivilegeError:
+                pass
+    logger.info("Database tables ensured")
 
 
 async def close_db() -> None:

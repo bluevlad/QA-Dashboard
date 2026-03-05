@@ -3,20 +3,23 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: qa-dashboard-backend
+    image: qa-dashboard-api:latest
+    container_name: qa-dashboard-api
     restart: always
     ports:
-      - "9095:9095"
+      - "9095:8000"
     environment:
-      - QD_DB_HOST=${QD_DB_HOST}
-      - QD_DB_PORT=${QD_DB_PORT}
-      - QD_DB_NAME=${QD_DB_NAME}
-      - QD_DB_USER=${QD_DB_USER}
-      - QD_DB_PASSWORD=${QD_DB_PASSWORD}
-      - QD_CORS_ORIGINS=${QD_CORS_ORIGINS}
-      - QD_LOG_DIR=/app/logs
+      - QA_DASHBOARD_DATABASE_URL=${QA_DASHBOARD_DATABASE_URL}
+      - QA_DASHBOARD_API_KEY=${QA_DASHBOARD_API_KEY}
+      - QA_DASHBOARD_CORS_ORIGINS=${QA_DASHBOARD_CORS_ORIGINS:-*}
+      - QA_DASHBOARD_LOG_DIR=/app/logs
     volumes:
       - /Users/rainend/DockerData/qa-dashboard/logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - qa-dashboard-network
       - database-network
@@ -25,12 +28,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: qa-dashboard-frontend
+    image: qa-dashboard-web:latest
+    container_name: qa-dashboard-web
     restart: always
     ports:
-      - "4095:4095"
+      - "4095:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - qa-dashboard-network
 

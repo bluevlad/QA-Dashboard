@@ -5,8 +5,13 @@ from glob import glob
 
 from app.core.config import get_settings
 from app.core.database import get_pool
-from app.models.schemas import RunImportRequest
-from app.services.import_service import import_run
+from app.models.schemas import IngestRequest
+from app.services.import_log_service import (
+    log_import_failed,
+    log_import_received,
+    log_import_success,
+)
+from app.services.import_service import ingest_run
 
 logger = logging.getLogger(__name__)
 
@@ -20,19 +25,19 @@ async def sync_logs() -> int:
     if not log_files:
         return 0
 
-    # Get already-imported filenames
     async with pool.acquire() as conn:
-        rows = await conn.fetch("SELECT log_filename FROM scheduler_runs")
-        imported = {r["log_filename"] for r in rows}
+        rows = await conn.fetch("SELECT run_id FROM qa_runs")
+        imported = {r["run_id"] for r in rows}
 
     new_count = 0
     for filepath in log_files:
         filename = os.path.basename(filepath)
-        if filename in imported:
+        run_id = filename.replace("run-", "").replace(".json", "")
+        if run_id in imported:
             continue
 
         try:
-            await _import_log_file(filepath, filename)
+            await _import_log_file(filepath)
             new_count += 1
             logger.info("Imported log: %s", filename)
         except Exception as e:
@@ -41,9 +46,24 @@ async def sync_logs() -> int:
     return new_count
 
 
-async def _import_log_file(filepath: str, filename: str) -> None:
+async def _import_log_file(filepath: str) -> None:
+    file_size = os.path.getsize(filepath)
+
     with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    request = RunImportRequest(**data)
-    await import_run(request, log_filename=filename)
+    request = IngestRequest(**data)
+
+    log_id = await log_import_received(
+        run_id=request.runId,
+        source="file_sync",
+        client_ip="localhost",
+        request_size=file_size,
+    )
+
+    try:
+        await ingest_run(request)
+        await log_import_success(log_id)
+    except Exception as e:
+        await log_import_failed(log_id, str(e))
+        raise

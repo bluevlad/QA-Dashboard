@@ -8,11 +8,10 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
 
     # Database
-    DB_HOST: str = "localhost"
-    DB_PORT: int = 5432
-    DB_NAME: str = "qa_dashboard"
-    DB_USER: str = "postgres"
-    DB_PASSWORD: str = ""
+    DATABASE_URL: str = "postgresql://postgres@localhost:5432/qa_dashboard"
+
+    # API Key for ingest authentication
+    API_KEY: str = "qa-agent-secret-key"
 
     # Log directory (mounted volume)
     LOG_DIR: str = "/app/logs"
@@ -24,14 +23,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "*"
 
     model_config = {
-        "env_file": ".env",
-        "env_prefix": "QD_",
+        "env_prefix": "QA_DASHBOARD_",
         "extra": "ignore",
     }
-
-    @property
-    def dsn(self) -> str:
-        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 
 @lru_cache(maxsize=1)

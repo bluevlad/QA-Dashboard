@@ -8,16 +8,16 @@ async def get_pass_rate_trend(days: int = 30) -> list[TrendPoint]:
         rows = await conn.fetch(
             """
             SELECT
-                DATE_TRUNC('day', sr.started_at)::date::text AS date,
+                DATE_TRUNC('day', started_at)::date::text AS date,
                 CASE WHEN SUM(total_tests) > 0
                      THEN ROUND(SUM(total_passed)::numeric / SUM(total_tests) * 100, 1)
                      ELSE 0 END AS pass_rate,
                 SUM(total_tests)::int AS total_tests,
                 SUM(total_passed)::int AS total_passed,
                 SUM(total_failed)::int AS total_failed
-            FROM scheduler_runs sr
-            WHERE sr.started_at >= NOW() - ($1 || ' days')::interval
-            GROUP BY DATE_TRUNC('day', sr.started_at)
+            FROM qa_runs
+            WHERE started_at >= NOW() - ($1 || ' days')::interval
+            GROUP BY DATE_TRUNC('day', started_at)
             ORDER BY date
             """,
             str(days),
@@ -31,13 +31,13 @@ async def get_duration_trend(days: int = 30) -> list[DurationTrendPoint]:
         rows = await conn.fetch(
             """
             SELECT
-                DATE_TRUNC('day', sr.started_at)::date::text AS date,
-                ROUND(AVG(sr.duration_ms)::numeric, 0)::float AS avg_duration_ms,
-                MIN(sr.duration_ms)::float AS min_duration_ms,
-                MAX(sr.duration_ms)::float AS max_duration_ms
-            FROM scheduler_runs sr
-            WHERE sr.started_at >= NOW() - ($1 || ' days')::interval
-            GROUP BY DATE_TRUNC('day', sr.started_at)
+                DATE_TRUNC('day', started_at)::date::text AS date,
+                ROUND(AVG(duration_ms)::numeric, 0)::float AS avg_duration_ms,
+                MIN(duration_ms)::float AS min_duration_ms,
+                MAX(duration_ms)::float AS max_duration_ms
+            FROM qa_runs
+            WHERE started_at >= NOW() - ($1 || ' days')::interval
+            GROUP BY DATE_TRUNC('day', started_at)
             ORDER BY date
             """,
             str(days),
