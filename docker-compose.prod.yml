@@ -4,7 +4,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: qa-dashboard-backend
-    restart: unless-stopped
+    restart: always
     ports:
       - "9095:9095"
     environment:
@@ -26,7 +26,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: qa-dashboard-frontend
-    restart: unless-stopped
+    restart: always
     ports:
       - "4095:4095"
     depends_on:
