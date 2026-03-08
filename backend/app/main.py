@@ -3,7 +3,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
+from app.auth.config import get_auth_settings
 from app.core.config import get_settings
 from app.core.database import close_db, init_db
 
@@ -28,12 +30,15 @@ async def lifespan(app: FastAPI):
 
 
 settings = get_settings()
+auth_settings = get_auth_settings()
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     lifespan=lifespan,
 )
+
+app.add_middleware(SessionMiddleware, secret_key=auth_settings.SESSION_SECRET_KEY)
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,6 +48,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.auth.google_oauth import router as auth_router
 from app.api.health import router as health_router
 from app.api.import_api import router as import_router
 from app.api.projects import router as projects_router
@@ -51,6 +57,7 @@ from app.api.search import router as search_router
 from app.api.summary import router as summary_router
 from app.api.trends import router as trends_router
 
+app.include_router(auth_router)
 app.include_router(health_router, prefix="/api")
 app.include_router(import_router, prefix="/api")
 app.include_router(runs_router, prefix="/api")
