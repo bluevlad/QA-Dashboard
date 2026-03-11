@@ -9,7 +9,7 @@ import type {
 } from '../types/dashboard';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: '/qa/api',
   timeout: 15000,
 });
 

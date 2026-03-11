@@ -36,6 +36,10 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     lifespan=lifespan,
+    root_path="/qa",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
 )
 
 app.add_middleware(SessionMiddleware, secret_key=auth_settings.SESSION_SECRET_KEY)

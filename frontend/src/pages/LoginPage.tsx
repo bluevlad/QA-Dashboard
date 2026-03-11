@@ -5,8 +5,6 @@ import { useSearchParams } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9095';
-
 const errorMessages: Record<string, string> = {
   oauth_failed: 'Google 인증에 실패했습니다. 다시 시도해주세요.',
   no_user_info: '사용자 정보를 가져올 수 없습니다.',
@@ -18,7 +16,7 @@ const LoginPage: React.FC = () => {
   const error = searchParams.get('error');
 
   const handleGoogleLogin = () => {
-    window.location.href = `${BACKEND_URL}/api/auth/google/login`;
+    window.location.href = '/qa/api/auth/google/login';
   };
 
   return (
