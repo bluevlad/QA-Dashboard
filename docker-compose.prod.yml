@@ -8,10 +8,9 @@ services:
     restart: always
     ports:
       - "9095:8000"
+    env_file:
+      - .env
     environment:
-      - QA_DASHBOARD_DATABASE_URL=${QA_DASHBOARD_DATABASE_URL}
-      - QA_DASHBOARD_API_KEY=${QA_DASHBOARD_API_KEY}
-      - QA_DASHBOARD_CORS_ORIGINS=${QA_DASHBOARD_CORS_ORIGINS:-*}
       - QA_DASHBOARD_LOG_DIR=/app/logs
     volumes:
       - /Users/rainend/DockerData/qa-dashboard/logs:/app/logs
