@@ -53,6 +53,14 @@ jobs:
         echo "Need Docker restart: $need_restart"
         echo "need_restart=$need_restart" >> $GITHUB_OUTPUT
 
+    - name: Ensure shared PostgreSQL is running
+      if: steps.check-docker.outputs.need_restart == 'true'
+      run: |
+        docker exec postgresql pg_isready -U postgres || {
+          echo "ERROR: Shared PostgreSQL container is not running"
+          exit 1
+        }
+
     - name: Stop existing containers
       if: steps.check-docker.outputs.need_restart == 'true'
       run: docker compose -f docker-compose.prod.yml down --remove-orphans
@@ -96,16 +104,6 @@ jobs:
           fi
           sleep 2
         done
-
-    - name: Verify API docs
-      if: steps.check-docker.outputs.need_restart == 'true'
-      run: |
-        echo "Checking API docs..."
-        if curl -sf http://localhost:9095/api/docs > /dev/null 2>&1; then
-          echo "API docs available!"
-        else
-          echo "Warning: API docs not responding (non-critical)"
-        fi
 
     - name: Deployment summary
       if: steps.check-docker.outputs.need_restart == 'true'
