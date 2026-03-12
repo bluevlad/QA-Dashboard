@@ -3,9 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.sessions import SessionMiddleware
 
-from app.auth.config import get_auth_settings
 from app.core.config import get_settings
 from app.core.database import close_db, init_db
 
@@ -30,7 +28,6 @@ async def lifespan(app: FastAPI):
 
 
 settings = get_settings()
-auth_settings = get_auth_settings()
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -41,8 +38,6 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
 )
-
-app.add_middleware(SessionMiddleware, secret_key=auth_settings.SESSION_SECRET_KEY)
 
 app.add_middleware(
     CORSMiddleware,
