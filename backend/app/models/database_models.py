@@ -121,4 +121,59 @@ TABLES_DDL = [
     "CREATE INDEX IF NOT EXISTS idx_import_log_run_id ON import_request_log(run_id)",
     "CREATE INDEX IF NOT EXISTS idx_import_log_received_at ON import_request_log(received_at)",
     "CREATE INDEX IF NOT EXISTS idx_import_log_status ON import_request_log(status)",
+    # ── Fix Results: Auto-Tobe-Agent 수정 결과 ──
+    """
+    CREATE TABLE IF NOT EXISTS qa_fix_results (
+        id                BIGSERIAL PRIMARY KEY,
+        issue_number      INTEGER NOT NULL,
+        project_name      VARCHAR NOT NULL,
+        source_run_id     VARCHAR,
+        priority          VARCHAR(2) NOT NULL,
+        category          VARCHAR NOT NULL,
+        strategy          VARCHAR NOT NULL,
+        status            VARCHAR NOT NULL,
+        branch_name       VARCHAR,
+        commit_hash       VARCHAR,
+        pr_url            TEXT,
+        pr_number         INTEGER,
+        modified_files    JSONB DEFAULT '[]'::jsonb,
+        verifications     JSONB DEFAULT '[]'::jsonb,
+        compliance_score  VARCHAR,
+        error             TEXT,
+        retry_count       INTEGER DEFAULT 0,
+        duration_ms       INTEGER,
+        started_at        TIMESTAMPTZ NOT NULL,
+        completed_at      TIMESTAMPTZ,
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_fix_results_project ON qa_fix_results(project_name)",
+    "CREATE INDEX IF NOT EXISTS idx_fix_results_issue ON qa_fix_results(issue_number)",
+    "CREATE INDEX IF NOT EXISTS idx_fix_results_status ON qa_fix_results(status)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_fix_results_proj_issue ON qa_fix_results(project_name, issue_number)",
+    # ── Lifecycle Tracking: 점검 → 수정 → 확인 추적 ──
+    """
+    CREATE TABLE IF NOT EXISTS qa_lifecycle_tracking (
+        id                    BIGSERIAL PRIMARY KEY,
+        issue_number          INTEGER NOT NULL,
+        project_name          VARCHAR NOT NULL,
+        detected_run_id       VARCHAR,
+        detected_at           TIMESTAMPTZ,
+        detection_type        VARCHAR,
+        fix_result_id         BIGINT REFERENCES qa_fix_results(id) ON DELETE SET NULL,
+        fix_started_at        TIMESTAMPTZ,
+        fix_completed_at      TIMESTAMPTZ,
+        fix_status            VARCHAR,
+        verification_run_id   VARCHAR,
+        verified_at           TIMESTAMPTZ,
+        verification_passed   BOOLEAN,
+        lifecycle_status      VARCHAR NOT NULL DEFAULT 'detected',
+        resolved_at           TIMESTAMPTZ,
+        created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(project_name, issue_number)
+    )
+    """,
+    "CREATE INDEX IF NOT EXISTS idx_lifecycle_status ON qa_lifecycle_tracking(lifecycle_status)",
+    "CREATE INDEX IF NOT EXISTS idx_lifecycle_project ON qa_lifecycle_tracking(project_name)",
 ]

@@ -165,3 +165,100 @@ class ImportLogItem(BaseModel):
     error_message: str | None
     request_size: int
     completed_at: datetime | None
+
+
+# --- Fix Results (Auto-Tobe-Agent -> Dashboard) ---
+
+
+class ModifiedFileIn(BaseModel):
+    path: str
+    changeType: str  # modified, added, deleted
+    linesAdded: int = 0
+    linesDeleted: int = 0
+
+
+class VerificationIn(BaseModel):
+    type: str  # build, test, lint
+    passed: bool
+    command: str
+    output: str | None = None
+    error: str | None = None
+    durationMs: int = 0
+
+
+class FixResultIn(BaseModel):
+    issueNumber: int
+    projectName: str
+    sourceRunId: str | None = None
+    priority: str
+    category: str
+    strategy: str
+    status: str
+    branchName: str | None = None
+    commitHash: str | None = None
+    prUrl: str | None = None
+    prNumber: int | None = None
+    modifiedFiles: list[ModifiedFileIn] = []
+    verifications: list[VerificationIn] = []
+    complianceScore: str | None = None
+    error: str | None = None
+    retryCount: int = 0
+    durationMs: int | None = None
+    startedAt: str
+    completedAt: str | None = None
+
+
+class FixResultItem(BaseModel):
+    id: int
+    issue_number: int
+    project_name: str
+    source_run_id: str | None
+    priority: str
+    category: str
+    strategy: str
+    status: str
+    branch_name: str | None
+    commit_hash: str | None
+    pr_url: str | None
+    pr_number: int | None
+    modified_files: list[dict] = []
+    verifications: list[dict] = []
+    compliance_score: str | None
+    error: str | None
+    retry_count: int
+    duration_ms: int | None
+    started_at: datetime
+    completed_at: datetime | None
+    created_at: datetime
+
+
+class LifecycleItem(BaseModel):
+    id: int
+    issue_number: int
+    project_name: str
+    detected_run_id: str | None
+    detected_at: datetime | None
+    detection_type: str | None
+    fix_result_id: int | None
+    fix_started_at: datetime | None
+    fix_completed_at: datetime | None
+    fix_status: str | None
+    verification_run_id: str | None
+    verified_at: datetime | None
+    verification_passed: bool | None
+    lifecycle_status: str
+    resolved_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class LifecycleSummary(BaseModel):
+    total: int
+    detected: int
+    fixing: int
+    fixed: int
+    verifying: int
+    resolved: int
+    regression: int
+    failed: int
+    by_project: dict[str, dict[str, int]]

@@ -55,6 +55,7 @@ from app.api.runs import router as runs_router
 from app.api.search import router as search_router
 from app.api.summary import router as summary_router
 from app.api.trends import router as trends_router
+from app.api.fix_api import router as fix_router
 
 app.include_router(auth_router)
 app.include_router(health_router, prefix="/api")
@@ -64,3 +65,4 @@ app.include_router(projects_router, prefix="/api")
 app.include_router(search_router, prefix="/api")
 app.include_router(summary_router, prefix="/api")
 app.include_router(trends_router, prefix="/api")
+app.include_router(fix_router, prefix="/api")
