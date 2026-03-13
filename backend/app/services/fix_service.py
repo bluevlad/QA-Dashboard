@@ -7,6 +7,22 @@ from app.core.database import get_pool
 logger = logging.getLogger(__name__)
 
 
+def _parse_dt(value) -> datetime | None:
+    """문자열 또는 datetime을 datetime 객체로 변환합니다."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        s = str(value)
+        # 'Z' suffix를 '+00:00'으로 변환
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+        return datetime.fromisoformat(s)
+    except (ValueError, TypeError):
+        return None
+
+
 async def upsert_fix_result(data: dict) -> int:
     """수정 결과를 저장하거나 업데이트합니다 (project_name + issue_number 기준 upsert)."""
     pool = await get_pool()
@@ -65,8 +81,8 @@ async def upsert_fix_result(data: dict) -> int:
             data.get("error"),
             data.get("retryCount", 0),
             data.get("durationMs"),
-            data["startedAt"],
-            data.get("completedAt"),
+            _parse_dt(data["startedAt"]),
+            _parse_dt(data.get("completedAt")),
         )
         fix_id = row["id"]
 
@@ -126,8 +142,8 @@ async def _update_lifecycle(conn, data: dict, fix_id: int) -> None:
         now,
         data.get("category"),
         fix_id,
-        data["startedAt"],
-        data.get("completedAt"),
+        _parse_dt(data["startedAt"]),
+        _parse_dt(data.get("completedAt")),
         status,
         lifecycle_status,
         now,
