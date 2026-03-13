@@ -19,6 +19,11 @@ import {
   WarningOutlined,
   BugOutlined,
   LinkOutlined,
+  ToolOutlined,
+  SyncOutlined,
+  ClockCircleOutlined,
+  BranchesOutlined,
+  PullRequestOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { fetchRunDetail } from '../../services/api';
@@ -29,6 +34,8 @@ import type {
   FailureDetail,
   Suggestion,
   IssueResult,
+  FixResult,
+  LifecycleItem,
 } from '../../types/dashboard';
 
 const { Text } = Typography;
@@ -104,6 +111,33 @@ const RunDetailDrawer: React.FC<Props> = ({ runId, onClose }) => {
           key: 'issues',
           label: `Issues (${detail.issueResults.length})`,
           children: <IssueTab issues={detail.issueResults} />,
+        },
+        {
+          key: 'fixes',
+          label: (
+            <span>
+              <ToolOutlined />{' '}
+              <Badge
+                count={detail.fixResults.length}
+                size="small"
+                offset={[4, 0]}
+                showZero={false}
+                style={{ backgroundColor: detail.fixResults.some(f => f.status === 'failed') ? '#ff4d4f' : '#52c41a' }}
+              >
+                Fixes
+              </Badge>
+            </span>
+          ),
+          children: <FixTab fixes={detail.fixResults} />,
+        },
+        {
+          key: 'lifecycle',
+          label: (
+            <span>
+              <SyncOutlined /> Lifecycle ({detail.lifecycleItems.length})
+            </span>
+          ),
+          children: <LifecycleTab items={detail.lifecycleItems} />,
         },
       ]
     : [];
@@ -391,6 +425,45 @@ const SuggestionTab: React.FC<{ suggestions: Suggestion[] }> = ({ suggestions })
   );
 };
 
+const fixStatusConfig: Record<string, { color: string; label: string }> = {
+  pending: { color: 'default', label: 'Pending' },
+  in_progress: { color: 'processing', label: 'In Progress' },
+  fix_applied: { color: 'blue', label: 'Fix Applied' },
+  build_verified: { color: 'cyan', label: 'Build Verified' },
+  test_verified: { color: 'geekblue', label: 'Test Verified' },
+  pr_created: { color: 'purple', label: 'PR Created' },
+  verification_requested: { color: 'orange', label: 'Verifying' },
+  verification_passed: { color: 'green', label: 'Verified' },
+  verification_failed: { color: 'red', label: 'Verify Failed' },
+  merged: { color: 'green', label: 'Merged' },
+  deployed: { color: 'green', label: 'Deployed' },
+  failed: { color: 'red', label: 'Failed' },
+  skipped: { color: 'default', label: 'Skipped' },
+};
+
+const priorityColor: Record<string, string> = {
+  P0: 'red',
+  P1: 'orange',
+  P2: 'gold',
+  P3: 'blue',
+};
+
+const complianceColor: Record<string, string> = {
+  pass: 'green',
+  review_needed: 'orange',
+  rework_needed: 'red',
+};
+
+const lifecycleStatusColor: Record<string, string> = {
+  detected: 'orange',
+  fixing: 'processing',
+  fixed: 'blue',
+  verifying: 'purple',
+  resolved: 'green',
+  regression: 'red',
+  failed: 'red',
+};
+
 const IssueTab: React.FC<{ issues: IssueResult[] }> = ({ issues }) => {
   if (issues.length === 0) {
     return <Text type="secondary">No issue reports</Text>;
@@ -403,12 +476,12 @@ const IssueTab: React.FC<{ issues: IssueResult[] }> = ({ issues }) => {
       size="small"
       pagination={false}
       columns={[
-        { title: 'Project', dataIndex: 'project_name', key: 'project_name' },
+        { title: 'Project', dataIndex: 'project_name', key: 'project_name', width: 120 },
         {
           title: 'Action',
           dataIndex: 'action',
           key: 'action',
-          width: 100,
+          width: 90,
           render: (v: string) => {
             const colorMap: Record<string, string> = {
               created: 'green',
@@ -422,6 +495,7 @@ const IssueTab: React.FC<{ issues: IssueResult[] }> = ({ issues }) => {
         {
           title: 'Issue',
           key: 'issue',
+          width: 80,
           render: (_: unknown, r: IssueResult) =>
             r.issue_url ? (
               <Tooltip title={r.issue_url}>
@@ -435,7 +509,341 @@ const IssueTab: React.FC<{ issues: IssueResult[] }> = ({ issues }) => {
               '-'
             ),
         },
+        {
+          title: 'Lifecycle',
+          key: 'lifecycle_status',
+          width: 100,
+          render: (_: unknown, r: IssueResult) =>
+            r.lifecycle_status ? (
+              <Tag color={lifecycleStatusColor[r.lifecycle_status] || 'default'}>
+                {r.lifecycle_status}
+              </Tag>
+            ) : (
+              <Text type="secondary">-</Text>
+            ),
+        },
+        {
+          title: 'Fix',
+          key: 'fix',
+          width: 120,
+          render: (_: unknown, r: IssueResult) => {
+            if (!r.fix_status) return <Text type="secondary">-</Text>;
+            return (
+              <Space size={4}>
+                <Tag color={fixStatusConfig[r.fix_status]?.color || 'default'}>
+                  {fixStatusConfig[r.fix_status]?.label || r.fix_status}
+                </Tag>
+                {r.fix_pr_url && (
+                  <a href={r.fix_pr_url} target="_blank" rel="noopener noreferrer">
+                    <PullRequestOutlined /> #{r.fix_pr_number}
+                  </a>
+                )}
+              </Space>
+            );
+          },
+        },
       ]}
+    />
+  );
+};
+
+const FixTab: React.FC<{ fixes: FixResult[] }> = ({ fixes }) => {
+  if (fixes.length === 0) {
+    return <Text type="secondary">No fix results for this run</Text>;
+  }
+
+  const succeeded = fixes.filter(f => !['failed', 'skipped', 'pending'].includes(f.status)).length;
+  const failed = fixes.filter(f => f.status === 'failed').length;
+
+  const items = fixes.map((f) => ({
+    key: String(f.id),
+    label: (
+      <Space>
+        <Tag color={priorityColor[f.priority] || 'default'}>{f.priority}</Tag>
+        <Text strong>{f.project_name}</Text>
+        <Text type="secondary">#{f.issue_number}</Text>
+        <Tag color={fixStatusConfig[f.status]?.color || 'default'}>
+          {fixStatusConfig[f.status]?.label || f.status}
+        </Tag>
+      </Space>
+    ),
+    children: (
+      <div style={{ padding: '8px 0' }}>
+        <Descriptions size="small" column={2} bordered>
+          <Descriptions.Item label="Category">
+            <Tag>{f.category}</Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="Strategy">{f.strategy}</Descriptions.Item>
+          {f.branch_name && (
+            <Descriptions.Item label="Branch">
+              <Space size={4}>
+                <BranchesOutlined />
+                <Text code>{f.branch_name}</Text>
+              </Space>
+            </Descriptions.Item>
+          )}
+          {f.pr_url && (
+            <Descriptions.Item label="PR">
+              <a href={f.pr_url} target="_blank" rel="noopener noreferrer">
+                <PullRequestOutlined /> #{f.pr_number}
+              </a>
+            </Descriptions.Item>
+          )}
+          {f.duration_ms != null && (
+            <Descriptions.Item label="Duration">
+              <ClockCircleOutlined /> {formatDuration(f.duration_ms)}
+            </Descriptions.Item>
+          )}
+          {f.compliance_score && (
+            <Descriptions.Item label="Compliance">
+              <Tag color={complianceColor[f.compliance_score] || 'default'}>
+                {f.compliance_score}
+              </Tag>
+            </Descriptions.Item>
+          )}
+          {f.retry_count > 0 && (
+            <Descriptions.Item label="Retries">{f.retry_count}</Descriptions.Item>
+          )}
+          {f.commit_hash && (
+            <Descriptions.Item label="Commit">
+              <Text code>{f.commit_hash.substring(0, 8)}</Text>
+            </Descriptions.Item>
+          )}
+        </Descriptions>
+
+        {f.modified_files.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <Text type="secondary" strong>Modified Files ({f.modified_files.length})</Text>
+            <Table
+              dataSource={f.modified_files}
+              rowKey="path"
+              size="small"
+              pagination={false}
+              style={{ marginTop: 4 }}
+              columns={[
+                {
+                  title: 'Path',
+                  dataIndex: 'path',
+                  key: 'path',
+                  ellipsis: true,
+                  render: (v: string) => <Text code style={{ fontSize: 12 }}>{v}</Text>,
+                },
+                {
+                  title: 'Type',
+                  dataIndex: 'changeType',
+                  key: 'changeType',
+                  width: 80,
+                  render: (v: string) => {
+                    const c = v === 'added' ? 'green' : v === 'deleted' ? 'red' : 'blue';
+                    return <Tag color={c}>{v}</Tag>;
+                  },
+                },
+                {
+                  title: 'Changes',
+                  key: 'changes',
+                  width: 100,
+                  render: (_: unknown, r: { linesAdded: number; linesDeleted: number }) => (
+                    <Space size={4}>
+                      <Text style={{ color: '#52c41a' }}>+{r.linesAdded}</Text>
+                      <Text style={{ color: '#ff4d4f' }}>-{r.linesDeleted}</Text>
+                    </Space>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        )}
+
+        {f.verifications.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <Text type="secondary" strong>Verifications</Text>
+            <div style={{ marginTop: 4 }}>
+              {f.verifications.map((v, i) => (
+                <Tag
+                  key={i}
+                  color={v.passed ? 'green' : 'red'}
+                  icon={v.passed ? <CheckCircleOutlined /> : <CloseCircleOutlined />}
+                  style={{ marginBottom: 4 }}
+                >
+                  {v.type} {v.durationMs ? `(${formatDuration(v.durationMs)})` : ''}
+                </Tag>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {f.error && (
+          <div style={{ marginTop: 12 }}>
+            <Text type="secondary" strong>Error</Text>
+            <pre
+              style={{
+                background: '#fff2f0',
+                padding: 12,
+                borderRadius: 4,
+                fontSize: 12,
+                maxHeight: 150,
+                overflow: 'auto',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                marginTop: 4,
+              }}
+            >
+              {f.error}
+            </pre>
+          </div>
+        )}
+      </div>
+    ),
+  }));
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 12 }}>
+        <Tag color="green">{succeeded} succeeded</Tag>
+        {failed > 0 && <Tag color="red">{failed} failed</Tag>}
+        <Text type="secondary">Total: {fixes.length}</Text>
+      </Space>
+      <Collapse items={items} size="small" />
+    </div>
+  );
+};
+
+const lifecycleStatusConfig: Record<string, { color: string; icon: React.ReactNode }> = {
+  detected: { color: 'orange', icon: <WarningOutlined /> },
+  fixing: { color: 'processing', icon: <SyncOutlined spin /> },
+  fixed: { color: 'blue', icon: <ToolOutlined /> },
+  verifying: { color: 'purple', icon: <SyncOutlined spin /> },
+  resolved: { color: 'green', icon: <CheckCircleOutlined /> },
+  regression: { color: 'red', icon: <CloseCircleOutlined /> },
+  failed: { color: 'red', icon: <CloseCircleOutlined /> },
+};
+
+const LifecycleTab: React.FC<{ items: LifecycleItem[] }> = ({ items }) => {
+  if (items.length === 0) {
+    return <Text type="secondary">No lifecycle tracking for this run</Text>;
+  }
+
+  return (
+    <Table<LifecycleItem>
+      dataSource={items}
+      rowKey="id"
+      size="small"
+      pagination={false}
+      columns={[
+        {
+          title: 'Project',
+          dataIndex: 'project_name',
+          key: 'project_name',
+          width: 130,
+        },
+        {
+          title: 'Issue',
+          dataIndex: 'issue_number',
+          key: 'issue_number',
+          width: 70,
+          render: (v: number) => `#${v}`,
+        },
+        {
+          title: 'Status',
+          dataIndex: 'lifecycle_status',
+          key: 'lifecycle_status',
+          width: 120,
+          render: (v: string) => {
+            const cfg = lifecycleStatusConfig[v] || { color: 'default', icon: null };
+            return (
+              <Tag color={cfg.color} icon={cfg.icon}>
+                {v}
+              </Tag>
+            );
+          },
+        },
+        {
+          title: 'Fix',
+          key: 'fix',
+          width: 110,
+          render: (_: unknown, r: LifecycleItem) => {
+            if (!r.fix_detail_status) return <Text type="secondary">-</Text>;
+            const cfg = fixStatusConfig[r.fix_detail_status] || { color: 'default', label: r.fix_detail_status };
+            return <Tag color={cfg.color}>{cfg.label}</Tag>;
+          },
+        },
+        {
+          title: 'PR',
+          key: 'pr',
+          width: 70,
+          render: (_: unknown, r: LifecycleItem) =>
+            r.fix_pr_url ? (
+              <a href={r.fix_pr_url} target="_blank" rel="noopener noreferrer">
+                <LinkOutlined /> #{r.fix_pr_number}
+              </a>
+            ) : (
+              <Text type="secondary">-</Text>
+            ),
+        },
+        {
+          title: 'Compliance',
+          key: 'compliance',
+          width: 100,
+          render: (_: unknown, r: LifecycleItem) =>
+            r.fix_compliance_score ? (
+              <Tag color={complianceColor[r.fix_compliance_score] || 'default'}>
+                {r.fix_compliance_score}
+              </Tag>
+            ) : (
+              <Text type="secondary">-</Text>
+            ),
+        },
+        {
+          title: 'Verified',
+          key: 'verified',
+          width: 80,
+          render: (_: unknown, r: LifecycleItem) => {
+            if (r.verification_passed === null || r.verification_passed === undefined) {
+              return <Text type="secondary">-</Text>;
+            }
+            return r.verification_passed ? (
+              <Tag color="green" icon={<CheckCircleOutlined />}>Pass</Tag>
+            ) : (
+              <Tag color="red" icon={<CloseCircleOutlined />}>Fail</Tag>
+            );
+          },
+        },
+      ]}
+      expandable={{
+        expandedRowRender: (record) => (
+          <Descriptions size="small" column={2} bordered>
+            {record.detected_at && (
+              <Descriptions.Item label="Detected">
+                {dayjs(record.detected_at).format('YYYY-MM-DD HH:mm:ss')}
+              </Descriptions.Item>
+            )}
+            {record.detection_type && (
+              <Descriptions.Item label="Type">{record.detection_type}</Descriptions.Item>
+            )}
+            {record.fix_started_at && (
+              <Descriptions.Item label="Fix Started">
+                {dayjs(record.fix_started_at).format('YYYY-MM-DD HH:mm:ss')}
+              </Descriptions.Item>
+            )}
+            {record.fix_completed_at && (
+              <Descriptions.Item label="Fix Completed">
+                {dayjs(record.fix_completed_at).format('YYYY-MM-DD HH:mm:ss')}
+              </Descriptions.Item>
+            )}
+            {record.verified_at && (
+              <Descriptions.Item label="Verified At">
+                {dayjs(record.verified_at).format('YYYY-MM-DD HH:mm:ss')}
+              </Descriptions.Item>
+            )}
+            {record.resolved_at && (
+              <Descriptions.Item label="Resolved At">
+                {dayjs(record.resolved_at).format('YYYY-MM-DD HH:mm:ss')}
+              </Descriptions.Item>
+            )}
+          </Descriptions>
+        ),
+        rowExpandable: () => true,
+      }}
     />
   );
 };

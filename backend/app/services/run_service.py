@@ -86,8 +86,51 @@ async def get_run_detail(run_id: str) -> dict | None:
         )
 
         issue_rows = await conn.fetch(
-            "SELECT * FROM qa_issue_results WHERE run_id = $1 ORDER BY id",
+            """
+            SELECT ir.*,
+                   lt.lifecycle_status,
+                   fr.status AS fix_status,
+                   fr.pr_url AS fix_pr_url,
+                   fr.pr_number AS fix_pr_number
+            FROM qa_issue_results ir
+            LEFT JOIN qa_lifecycle_tracking lt
+                ON lt.project_name = ir.project_name AND lt.issue_number = ir.issue_number
+            LEFT JOIN qa_fix_results fr
+                ON fr.project_name = ir.project_name AND fr.issue_number = ir.issue_number
+            WHERE ir.run_id = $1
+            ORDER BY ir.id
+            """,
             run_pk,
+        )
+
+        # Fix Results: source_run_id로 연결된 수정 이력 조회
+        fix_rows = await conn.fetch(
+            """
+            SELECT id, issue_number, project_name, source_run_id,
+                   priority, category, strategy, status,
+                   branch_name, commit_hash, pr_url, pr_number,
+                   modified_files, verifications, compliance_score,
+                   error, retry_count, duration_ms,
+                   started_at, completed_at, created_at
+            FROM qa_fix_results
+            WHERE source_run_id = $1
+            ORDER BY project_name, issue_number
+            """,
+            run_id,
+        )
+
+        # Lifecycle: 이 Run에서 감지되었거나 검증된 항목
+        lifecycle_rows = await conn.fetch(
+            """
+            SELECT lt.*, fr.pr_url AS fix_pr_url, fr.pr_number AS fix_pr_number,
+                   fr.compliance_score AS fix_compliance_score,
+                   fr.status AS fix_detail_status
+            FROM qa_lifecycle_tracking lt
+            LEFT JOIN qa_fix_results fr ON lt.fix_result_id = fr.id
+            WHERE lt.detected_run_id = $1 OR lt.verification_run_id = $1
+            ORDER BY lt.project_name, lt.issue_number
+            """,
+            run_id,
         )
 
     health_results = []
@@ -96,6 +139,29 @@ async def get_run_detail(run_id: str) -> dict | None:
         if isinstance(d.get("endpoints"), str):
             d["endpoints"] = json.loads(d["endpoints"])
         health_results.append(d)
+
+    # fix_rows의 JSONB 필드를 파싱
+    fix_results = []
+    for fr in fix_rows:
+        d = dict(fr)
+        for jsonb_field in ("modified_files", "verifications"):
+            if isinstance(d.get(jsonb_field), str):
+                d[jsonb_field] = json.loads(d[jsonb_field])
+        # datetime → ISO 문자열
+        for dt_field in ("started_at", "completed_at", "created_at"):
+            if d.get(dt_field) and hasattr(d[dt_field], "isoformat"):
+                d[dt_field] = d[dt_field].isoformat()
+        fix_results.append(d)
+
+    # lifecycle_rows datetime → ISO 문자열
+    lifecycle_items = []
+    for lr in lifecycle_rows:
+        d = dict(lr)
+        for dt_field in ("detected_at", "fix_started_at", "fix_completed_at",
+                         "verified_at", "resolved_at", "created_at", "updated_at"):
+            if d.get(dt_field) and hasattr(d[dt_field], "isoformat"):
+                d[dt_field] = d[dt_field].isoformat()
+        lifecycle_items.append(d)
 
     return {
         "id": run["id"],
@@ -117,4 +183,6 @@ async def get_run_detail(run_id: str) -> dict | None:
         "failureDetails": [dict(r) for r in failure_rows],
         "suggestions": [dict(r) for r in suggestion_rows],
         "issueResults": [dict(r) for r in issue_rows],
+        "fixResults": fix_results,
+        "lifecycleItems": lifecycle_items,
     }

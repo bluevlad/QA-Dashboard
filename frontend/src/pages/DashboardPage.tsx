@@ -24,6 +24,8 @@ import {
   ReloadOutlined,
   RiseOutlined,
   FallOutlined,
+  ToolOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 import {
   LineChart,
@@ -192,6 +194,65 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Lifecycle Summary */}
+      {summary.lifecycle_summary && summary.lifecycle_summary.total > 0 && (
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic
+                title="Total Issues Tracked"
+                value={summary.lifecycle_summary.total}
+                prefix={<SyncOutlined />}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic
+                title="Resolved"
+                value={summary.lifecycle_summary.resolved}
+                suffix={`/ ${summary.lifecycle_summary.total}`}
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: '#52c41a' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic
+                title="In Progress"
+                value={summary.lifecycle_summary.fixing + summary.lifecycle_summary.fixed + summary.lifecycle_summary.verifying}
+                prefix={<ToolOutlined />}
+                valueStyle={{ color: '#1890ff' }}
+              />
+              <Space size={4} style={{ marginTop: 4 }}>
+                {summary.lifecycle_summary.fixing > 0 && <Tag color="processing">Fixing {summary.lifecycle_summary.fixing}</Tag>}
+                {summary.lifecycle_summary.fixed > 0 && <Tag color="blue">Fixed {summary.lifecycle_summary.fixed}</Tag>}
+                {summary.lifecycle_summary.verifying > 0 && <Tag color="purple">Verifying {summary.lifecycle_summary.verifying}</Tag>}
+              </Space>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic
+                title="Needs Attention"
+                value={summary.lifecycle_summary.failed + summary.lifecycle_summary.regression + summary.lifecycle_summary.detected}
+                prefix={<CloseCircleOutlined />}
+                valueStyle={{
+                  color: (summary.lifecycle_summary.failed + summary.lifecycle_summary.regression) > 0 ? '#ff4d4f' : '#faad14',
+                }}
+              />
+              <Space size={4} style={{ marginTop: 4 }}>
+                {summary.lifecycle_summary.detected > 0 && <Tag color="orange">Detected {summary.lifecycle_summary.detected}</Tag>}
+                {summary.lifecycle_summary.failed > 0 && <Tag color="red">Failed {summary.lifecycle_summary.failed}</Tag>}
+                {summary.lifecycle_summary.regression > 0 && <Tag color="red">Regression {summary.lifecycle_summary.regression}</Tag>}
+              </Space>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Charts Row */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
