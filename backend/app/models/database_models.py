@@ -142,11 +142,21 @@ TABLES_DDL = [
         error             TEXT,
         retry_count       INTEGER DEFAULT 0,
         duration_ms       INTEGER,
+        engine_type       VARCHAR,
+        engine_model      VARCHAR,
+        engine_inference_ms INTEGER,
+        engine_metadata   JSONB DEFAULT '{}'::jsonb,
         started_at        TIMESTAMPTZ NOT NULL,
         completed_at      TIMESTAMPTZ,
         created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
     """,
+    # Engine 컬럼 마이그레이션 (기존 DB 호환)
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS engine_type VARCHAR",
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS engine_model VARCHAR",
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS engine_inference_ms INTEGER",
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS engine_metadata JSONB DEFAULT '{}'::jsonb",
+    "CREATE INDEX IF NOT EXISTS idx_fix_results_engine ON qa_fix_results(engine_type)",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_project ON qa_fix_results(project_name)",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_issue ON qa_fix_results(issue_number)",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_status ON qa_fix_results(status)",

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import AppLayout from './components/layout/AppLayout';
 import DashboardPage from './pages/DashboardPage';
+import EngineComparisonPage from './pages/EngineComparisonPage';
 import ApiGuidePage from './pages/ApiGuidePage';
 import LoginPage from './pages/LoginPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
@@ -29,6 +30,7 @@ const AppRoutes: React.FC = () => {
         }
       >
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/engine-comparison" element={<EngineComparisonPage />} />
         <Route path="/api-guide" element={<ApiGuidePage />} />
       </Route>
     </Routes>

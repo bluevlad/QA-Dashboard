@@ -6,10 +6,12 @@ import type {
   TrendPoint,
   DurationTrendPoint,
   ProjectStatus,
+  EngineComparisonData,
+  EngineDailyTrendPoint,
 } from '../types/dashboard';
 
 const api = axios.create({
-  baseURL: '/qa/api',
+  baseURL: '/api',
   timeout: 15000,
 });
 
@@ -51,6 +53,16 @@ export async function fetchPassRateTrend(days = 30): Promise<TrendPoint[]> {
 
 export async function fetchDurationTrend(days = 30): Promise<DurationTrendPoint[]> {
   const { data } = await api.get('/trends/duration', { params: { days } });
+  return data;
+}
+
+export async function fetchEngineStats(days = 30): Promise<EngineComparisonData> {
+  const { data } = await api.get('/engine-stats', { params: { days } });
+  return data;
+}
+
+export async function fetchEngineTrend(days = 30): Promise<EngineDailyTrendPoint[]> {
+  const { data } = await api.get('/engine-stats/trend', { params: { days } });
   return data;
 }
 

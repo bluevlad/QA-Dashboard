@@ -3,6 +3,7 @@ import { Layout, Menu } from 'antd';
 import {
   DashboardOutlined,
   ApiOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
@@ -10,6 +11,7 @@ const { Header, Sider, Content } = Layout;
 
 const MENU_ITEMS = [
   { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
+  { key: '/engine-comparison', icon: <ThunderboltOutlined />, label: 'Engine Compare' },
   { key: '/api-guide', icon: <ApiOutlined />, label: 'API Guide' },
 ];
 

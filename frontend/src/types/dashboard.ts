@@ -175,12 +175,56 @@ export interface FixResult {
   modified_files: ModifiedFile[];
   verifications: Verification[];
   compliance_score: string | null;
+  engine_type: string | null;
+  engine_model: string | null;
+  engine_inference_ms: number | null;
+  engine_fallback_used: boolean | null;
   error: string | null;
   retry_count: number;
   duration_ms: number | null;
   started_at: string;
   completed_at: string | null;
   created_at: string;
+}
+
+// ===== Engine Comparison Types =====
+
+export interface EngineStats {
+  engine_type: string;
+  model_name: string;
+  total_fixes: number;
+  success_count: number;
+  failure_count: number;
+  skipped_count: number;
+  success_rate: number;
+  avg_duration_ms: number | null;
+  avg_inference_ms: number | null;
+  fallback_count: number;
+}
+
+export interface EngineProjectStats {
+  project_name: string;
+  total: number;
+  succeeded: number;
+  failed: number;
+  success_rate: number;
+  avg_duration_ms: number | null;
+}
+
+export interface EngineComparisonData {
+  period_days: number;
+  engines: EngineStats[];
+  by_project: Record<string, EngineProjectStats[]>;
+}
+
+export interface EngineDailyTrendPoint {
+  date: string;
+  engine_type: string;
+  total: number;
+  succeeded: number;
+  failed: number;
+  avg_duration_ms: number | null;
+  avg_inference_ms: number | null;
 }
 
 export interface LifecycleItem {

@@ -186,6 +186,16 @@ class VerificationIn(BaseModel):
     durationMs: int = 0
 
 
+class EngineMetadataIn(BaseModel):
+    engineType: str  # "claude-code-cli" or "local-llm"
+    modelName: str  # e.g. "claude-opus-4-6", "qwen2.5-coder:32b"
+    inferenceMs: int = 0
+    totalTokens: int | None = None
+    toolCallCount: int | None = None
+    fallbackUsed: bool = False
+    fallbackReason: str | None = None
+
+
 class FixResultIn(BaseModel):
     issueNumber: int
     projectName: str
@@ -201,6 +211,7 @@ class FixResultIn(BaseModel):
     modifiedFiles: list[ModifiedFileIn] = []
     verifications: list[VerificationIn] = []
     complianceScore: str | None = None
+    engine: EngineMetadataIn | None = None
     error: str | None = None
     retryCount: int = 0
     durationMs: int | None = None
@@ -224,6 +235,10 @@ class FixResultItem(BaseModel):
     modified_files: list[dict] = []
     verifications: list[dict] = []
     compliance_score: str | None
+    engine_type: str | None = None
+    engine_model: str | None = None
+    engine_inference_ms: int | None = None
+    engine_fallback_used: bool | None = None
     error: str | None
     retry_count: int
     duration_ms: int | None

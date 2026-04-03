@@ -33,7 +33,7 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     lifespan=lifespan,
-    root_path="/qa",
+    root_path="",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
@@ -56,6 +56,7 @@ from app.api.search import router as search_router
 from app.api.summary import router as summary_router
 from app.api.trends import router as trends_router
 from app.api.fix_api import router as fix_router
+from app.api.engine_stats_api import router as engine_stats_router
 
 app.include_router(auth_router)
 app.include_router(health_router, prefix="/api")
@@ -66,3 +67,4 @@ app.include_router(search_router, prefix="/api")
 app.include_router(summary_router, prefix="/api")
 app.include_router(trends_router, prefix="/api")
 app.include_router(fix_router, prefix="/api")
+app.include_router(engine_stats_router, prefix="/api")

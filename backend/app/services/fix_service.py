@@ -27,6 +27,13 @@ async def upsert_fix_result(data: dict) -> int:
     """수정 결과를 저장하거나 업데이트합니다 (project_name + issue_number 기준 upsert)."""
     pool = await get_pool()
     async with pool.acquire() as conn:
+        # Engine 메타데이터 추출
+        engine = data.get("engine") or {}
+        engine_type = engine.get("engineType")
+        engine_model = engine.get("modelName")
+        engine_inference_ms = engine.get("inferenceMs")
+        engine_metadata = json.dumps(engine) if engine else "{}"
+
         row = await conn.fetchrow(
             """
             INSERT INTO qa_fix_results (
@@ -34,6 +41,7 @@ async def upsert_fix_result(data: dict) -> int:
                 priority, category, strategy, status,
                 branch_name, commit_hash, pr_url, pr_number,
                 modified_files, verifications, compliance_score,
+                engine_type, engine_model, engine_inference_ms, engine_metadata,
                 error, retry_count, duration_ms,
                 started_at, completed_at
             ) VALUES (
@@ -41,8 +49,9 @@ async def upsert_fix_result(data: dict) -> int:
                 $4, $5, $6, $7,
                 $8, $9, $10, $11,
                 $12::jsonb, $13::jsonb, $14,
-                $15, $16, $17,
-                $18, $19
+                $15, $16, $17, $18::jsonb,
+                $19, $20, $21,
+                $22, $23
             )
             ON CONFLICT (project_name, issue_number) DO UPDATE SET
                 source_run_id     = EXCLUDED.source_run_id,
@@ -57,6 +66,10 @@ async def upsert_fix_result(data: dict) -> int:
                 modified_files    = EXCLUDED.modified_files,
                 verifications     = EXCLUDED.verifications,
                 compliance_score  = EXCLUDED.compliance_score,
+                engine_type       = EXCLUDED.engine_type,
+                engine_model      = EXCLUDED.engine_model,
+                engine_inference_ms = EXCLUDED.engine_inference_ms,
+                engine_metadata   = EXCLUDED.engine_metadata,
                 error             = EXCLUDED.error,
                 retry_count       = EXCLUDED.retry_count,
                 duration_ms       = EXCLUDED.duration_ms,
@@ -78,6 +91,10 @@ async def upsert_fix_result(data: dict) -> int:
             json.dumps([f for f in data.get("modifiedFiles", [])]),
             json.dumps([v for v in data.get("verifications", [])]),
             data.get("complianceScore"),
+            engine_type,
+            engine_model,
+            engine_inference_ms,
+            engine_metadata,
             data.get("error"),
             data.get("retryCount", 0),
             data.get("durationMs"),
