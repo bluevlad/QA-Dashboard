@@ -24,7 +24,7 @@ const LoginPage: React.FC = () => {
   const handleCredentialResponse = useCallback(
     async (response: { credential: string }) => {
       try {
-        const res = await fetch('/qa/api/auth/google/verify', {
+        const res = await fetch('/api/auth/google/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ credential: response.credential }),
