@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { Card, Typography, Alert, Space, Spin } from 'antd';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,7 @@ const LoginPage: React.FC = () => {
   const error = searchParams.get('error');
   const googleButtonRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
+  const [googleReady, setGoogleReady] = useState(false);
 
   const handleCredentialResponse = useCallback(
     async (response: { credential: string }) => {
@@ -60,10 +61,12 @@ const LoginPage: React.FC = () => {
     const initializeGoogle = () => {
       if (!window.google?.accounts?.id || !googleButtonRef.current) return;
       initializedRef.current = true;
+      setGoogleReady(true);
 
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse,
+        use_fedcm_for_prompt: true,
       });
 
       window.google.accounts.id.renderButton(googleButtonRef.current, {
@@ -85,6 +88,15 @@ const LoginPage: React.FC = () => {
       script.onload = initializeGoogle;
       document.head.appendChild(script);
     }
+
+    return () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.cancel();
+      }
+      if (googleButtonRef.current) {
+        googleButtonRef.current.innerHTML = '';
+      }
+    };
   }, [handleCredentialResponse]);
 
   return (
@@ -114,17 +126,20 @@ const LoginPage: React.FC = () => {
             />
           )}
 
+          {!googleReady && (
+            <div style={{ display: 'flex', justifyContent: 'center', minHeight: 44, alignItems: 'center' }}>
+              <Spin size="small" />
+            </div>
+          )}
           <div
             ref={googleButtonRef}
             style={{
-              display: 'flex',
+              display: googleReady ? 'flex' : 'none',
               justifyContent: 'center',
               minHeight: 44,
               alignItems: 'center',
             }}
-          >
-            {!initializedRef.current && <Spin size="small" />}
-          </div>
+          />
         </Space>
       </Card>
     </div>
@@ -139,7 +154,9 @@ declare global {
           initialize: (config: {
             client_id: string;
             callback: (response: { credential: string }) => void;
+            use_fedcm_for_prompt?: boolean;
           }) => void;
+          cancel: () => void;
           renderButton: (
             element: HTMLElement,
             config: {
