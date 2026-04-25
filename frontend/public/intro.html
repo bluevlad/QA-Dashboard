@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA-Agent - Autonomous Dev & Ops</title>
+    <meta name="description" content="QA-Agent - 자동화된 품질 보증, 코드부터 배포까지">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/service-landing.css">
+    <style>
+        :root {
+            --service-color: #8b5cf6;
+            --glow-r: 139; --glow-g: 92; --glow-b: 246;
+        }
+    </style>
+</head>
+<body>
+    <div class="sl-container">
+
+        <nav class="sl-topnav">
+            <div class="sl-nav-links">
+                <a href="https://www.unmong.com/index.html" class="sl-nav-link"><span class="sl-nav-arrow">&#8593;</span> Portal</a>
+                <a href="https://www.unmong.com/architecture.html" class="sl-nav-link"><span class="sl-nav-arrow">&#8594;</span> Architecture</a>
+            </div>
+        </nav>
+
+        <section class="sl-hero">
+            <div class="sl-hero-status"><span class="dot"></span> Active</div>
+            <h1>QA-Agent</h1>
+            <p class="tagline">Autonomous Quality Assurance</p>
+            <p class="desc">E2E/API 테스트를 자동 실행하고, 테스트 결과를 분석하여 GitHub Issue를 자동 생성하는 품질 보증 자동화 에이전트</p>
+            <div class="sl-hero-actions">
+                <a href="https://qadashboard.unmong.com/" target="_blank" rel="noopener" class="sl-btn sl-btn-primary">대시보드</a>
+                <a href="https://qadashboard.unmong.com/api/docs" target="_blank" rel="noopener" class="sl-btn sl-btn-outline">API Docs</a>
+            </div>
+        </section>
+
+        <section class="sl-section">
+            <div class="sl-section-title">Features</div>
+            <div class="sl-features">
+                <a class="sl-feature" href="https://qadashboard.unmong.com/" target="_blank" rel="noopener">
+                    <span class="sl-feature-icon">&#128202;</span>
+                    <div class="sl-feature-name">QA 대시보드</div>
+                    <div class="sl-feature-desc">테스트 실행 결과, 성공/실패 추이, 커버리지 현황</div>
+                    <span class="sl-feature-tag">Dashboard</span>
+                </a>
+                <a class="sl-feature" href="https://qadashboard.unmong.com/" target="_blank" rel="noopener">
+                    <span class="sl-feature-icon">&#128269;</span>
+                    <div class="sl-feature-name">자동 테스트</div>
+                    <div class="sl-feature-desc">스케줄/트리거 기반 E2E 및 API 테스트 자동 실행</div>
+                    <span class="sl-feature-tag">Automation</span>
+                </a>
+                <a class="sl-feature" href="https://qadashboard.unmong.com/api/docs" target="_blank" rel="noopener">
+                    <span class="sl-feature-icon">&#128268;</span>
+                    <div class="sl-feature-name">API</div>
+                    <div class="sl-feature-desc">테스트 결과 조회/트리거 RESTful API</div>
+                    <span class="sl-feature-tag">Backend API</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="sl-section sl-arch">
+            <div class="sl-section-title">Architecture</div>
+            <div class="sl-arch-diagram">
+                <div class="sl-arch-node">
+                    <div class="sl-arch-node-label">Test Engine</div>
+                    <div class="sl-arch-node-tech">Playwright / httpx</div>
+                </div>
+                <div class="sl-arch-arrow">&#8594;</div>
+                <div class="sl-arch-node highlight">
+                    <div class="sl-arch-node-label">Backend</div>
+                    <div class="sl-arch-node-tech">FastAPI</div>
+                </div>
+                <div class="sl-arch-arrow">&#8594;</div>
+                <div class="sl-arch-node">
+                    <div class="sl-arch-node-label">GitHub</div>
+                    <div class="sl-arch-node-tech">Issues API</div>
+                </div>
+                <div class="sl-arch-arrow">&#8592;</div>
+                <div class="sl-arch-node">
+                    <div class="sl-arch-node-label">Frontend</div>
+                    <div class="sl-arch-node-tech">React</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sl-section sl-flow">
+            <div class="sl-section-title">Service Flow</div>
+            <div class="sl-flow-steps">
+                <div class="sl-flow-step">
+                    <div class="sl-flow-step-num">1</div>
+                    <div class="sl-flow-step-label">트리거</div>
+                    <div class="sl-flow-step-desc">스케줄 / 수동</div>
+                </div>
+                <div class="sl-flow-arrow">&#8594;</div>
+                <div class="sl-flow-step">
+                    <div class="sl-flow-step-num">2</div>
+                    <div class="sl-flow-step-label">테스트 실행</div>
+                    <div class="sl-flow-step-desc">E2E / API 테스트</div>
+                </div>
+                <div class="sl-flow-arrow">&#8594;</div>
+                <div class="sl-flow-step">
+                    <div class="sl-flow-step-num">3</div>
+                    <div class="sl-flow-step-label">결과 분석</div>
+                    <div class="sl-flow-step-desc">성공/실패 판정</div>
+                </div>
+                <div class="sl-flow-arrow">&#8594;</div>
+                <div class="sl-flow-step">
+                    <div class="sl-flow-step-num">4</div>
+                    <div class="sl-flow-step-label">Issue 생성</div>
+                    <div class="sl-flow-step-desc">GitHub 자동 등록</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sl-section sl-tech">
+            <div class="sl-section-title">Tech Stack</div>
+            <div class="sl-tech-list">
+                <span class="sl-tech-badge"><span class="sl-tech-dot" style="background:#61dafb;"></span> React</span>
+                <span class="sl-tech-badge"><span class="sl-tech-dot" style="background:#009688;"></span> FastAPI</span>
+                <span class="sl-tech-badge"><span class="sl-tech-dot" style="background:#2ead33;"></span> Playwright</span>
+                <span class="sl-tech-badge"><span class="sl-tech-dot" style="background:#333;"></span> GitHub API</span>
+                <span class="sl-tech-badge"><span class="sl-tech-dot" style="background:#2496ed;"></span> Docker</span>
+            </div>
+        </section>
+
+        <section class="sl-section sl-connected">
+            <div class="sl-section-title">Test Targets</div>
+            <div class="sl-connected-grid">
+                <a href="https://allergy.unmong.com/intro.html" class="sl-connected-card">
+                    <span class="sl-connected-dot" style="background:#f43f5e;"></span>
+                    <div class="sl-connected-info">
+                        <div class="sl-connected-name">AllergyInsight</div>
+                        <div class="sl-connected-role">테스트 대상</div>
+                    </div>
+                    <span class="sl-connected-arrow">&#8594;</span>
+                </a>
+                <a href="https://edufit.unmong.com/intro.html" class="sl-connected-card">
+                    <span class="sl-connected-dot" style="background:#10b981;"></span>
+                    <div class="sl-connected-info">
+                        <div class="sl-connected-name">EduFit</div>
+                        <div class="sl-connected-role">테스트 대상</div>
+                    </div>
+                    <span class="sl-connected-arrow">&#8594;</span>
+                </a>
+                <a href="https://hopenvision.unmong.com/intro.html" class="sl-connected-card">
+                    <span class="sl-connected-dot" style="background:#f59e0b;"></span>
+                    <div class="sl-connected-info">
+                        <div class="sl-connected-name">HopenVision</div>
+                        <div class="sl-connected-role">테스트 대상</div>
+                    </div>
+                    <span class="sl-connected-arrow">&#8594;</span>
+                </a>
+                <a href="https://newsletter.unmong.com/intro.html" class="sl-connected-card">
+                    <span class="sl-connected-dot" style="background:#ec4899;"></span>
+                    <div class="sl-connected-info">
+                        <div class="sl-connected-name">NewsLetterPlatform</div>
+                        <div class="sl-connected-role">테스트 대상</div>
+                    </div>
+                    <span class="sl-connected-arrow">&#8594;</span>
+                </a>
+                <a href="https://standup.unmong.com/intro.html" class="sl-connected-card">
+                    <span class="sl-connected-dot" style="background:#14b8a6;"></span>
+                    <div class="sl-connected-info">
+                        <div class="sl-connected-name">StandUp</div>
+                        <div class="sl-connected-role">테스트 대상</div>
+                    </div>
+                    <span class="sl-connected-arrow">&#8594;</span>
+                </a>
+                <a href="https://loganalyzer.unmong.com/intro.html" class="sl-connected-card">
+                    <span class="sl-connected-dot" style="background:#f97316;"></span>
+                    <div class="sl-connected-info">
+                        <div class="sl-connected-name">LogAnalyzer</div>
+                        <div class="sl-connected-role">테스트 대상</div>
+                    </div>
+                    <span class="sl-connected-arrow">&#8594;</span>
+                </a>
+            </div>
+        </section>
+
+    </div>
+</body>
+</html>
