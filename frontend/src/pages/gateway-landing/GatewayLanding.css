@@ -5,7 +5,6 @@
     --text-color: #e2e8f0;
     --text-muted: #94a3b8;
     --text-dim: #64748b;
-    --accent-color: #3b82f6;
     --border-color: rgba(148, 163, 184, 0.15);
     --service-color: #8b5cf6;
     --glow-r: 139;
@@ -38,8 +37,8 @@
     width: 200%;
     height: 200%;
     background:
-        radial-gradient(ellipse at 30% 10%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 90%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+        radial-gradient(ellipse at 30% 10%, rgba(var(--glow-r), var(--glow-g), var(--glow-b), 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 90%, rgba(var(--glow-r), var(--glow-g), var(--glow-b), 0.05) 0%, transparent 50%);
     pointer-events: none;
 }
 
@@ -261,7 +260,7 @@
 
 .gateway-landing-root .sl-arch-node.highlight {
     border-color: var(--service-color);
-    box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
+    box-shadow: 0 0 12px rgba(var(--glow-r), var(--glow-g), var(--glow-b), 0.15);
 }
 
 .gateway-landing-root .sl-arch-arrow {
@@ -299,7 +298,7 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: rgba(139, 92, 246, 0.15);
+    background: rgba(var(--glow-r), var(--glow-g), var(--glow-b), 0.15);
     color: var(--service-color);
     font-size: 0.65rem;
     font-weight: 700;
@@ -462,13 +461,13 @@
     font-size: 0.78rem;
     padding: 0.25rem 0.6rem;
     border-radius: 6px;
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    border: 1px solid rgba(var(--glow-r), var(--glow-g), var(--glow-b), 0.3);
     transition: all 0.15s;
     white-space: nowrap;
 }
 
 .gateway-landing-root .sl-toast-action:hover {
-    background: rgba(139, 92, 246, 0.12);
+    background: rgba(var(--glow-r), var(--glow-g), var(--glow-b), 0.12);
     border-color: var(--service-color);
 }
 

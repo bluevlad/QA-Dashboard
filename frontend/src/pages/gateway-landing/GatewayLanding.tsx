@@ -18,14 +18,14 @@ const FEATURES: Feature[] = [
   {
     icon: '📊',
     name: 'QA 대시보드',
-    desc: '테스트 실행 결과·성공/실패 추이·커버리지 현황 종합',
+    desc: '테스트 실행 결과 · 성공/실패 추이 · 커버리지 종합',
     level: 'member',
     to: '/dashboard',
   },
   {
     icon: '⚖️',
     name: '엔진 비교',
-    desc: 'Playwright/httpx 등 테스트 엔진별 성능·결과 비교',
+    desc: 'Playwright · httpx 등 테스트 엔진별 성능·결과 비교',
     level: 'member',
     to: '/engine-comparison',
   },
@@ -63,10 +63,10 @@ interface Connected { name: string; role: string; href: string; dot: string; }
 const CONNECTED_SERVICES: Connected[] = [
   { name: 'AllergyInsight', role: '테스트 대상', href: 'https://allergy.unmong.com', dot: '#f43f5e' },
   { name: 'EduFit', role: '테스트 대상', href: 'https://edufit.unmong.com', dot: '#22c55e' },
-  { name: 'HopenVision', role: '테스트 대상', href: 'https://hopenvision.unmong.com', dot: '#f59e0b' },
+  { name: 'HopenVision', role: '테스트 대상', href: 'https://hopenvision.unmong.com', dot: '#3b82f6' },
   { name: 'NewsLetterPlatform', role: '테스트 대상', href: 'https://newsletter.unmong.com', dot: '#ec4899' },
   { name: 'StandUp', role: '테스트 대상', href: 'https://standup.unmong.com', dot: '#14b8a6' },
-  { name: 'InfraWatcher', role: '컨테이너 모니터링', href: 'https://infrawatcher.unmong.com', dot: '#06b6d4' },
+  { name: 'LogAnalyzer', role: '테스트 대상', href: 'https://loganalyzer.unmong.com', dot: '#f59e0b' },
 ];
 
 type AccessState = 'granted' | 'member-locked' | 'admin-locked';
@@ -181,7 +181,7 @@ const GatewayLanding: React.FC = () => {
           <h1>QA-Agent</h1>
           <p className="tagline">Autonomous Quality Assurance · Test Dashboard</p>
           <p className="desc">
-            E2E·API 테스트를 자동 실행하고, 결과를 분석해 GitHub Issue 까지 자동 생성하는 품질 보증 자동화 에이전트의 운영 대시보드
+            E2E·API 테스트를 자동 실행하고, 결과를 분석해 GitHub Issue 까지 자동 생성하는 품질 보증 자동화 에이전트
           </p>
         </section>
 
