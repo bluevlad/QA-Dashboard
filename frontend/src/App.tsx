@@ -7,6 +7,7 @@ import EngineComparisonPage from './pages/EngineComparisonPage';
 import ApiGuidePage from './pages/ApiGuidePage';
 import LoginPage from './pages/LoginPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import GatewayLanding from './pages/gateway-landing/GatewayLanding';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -22,6 +23,7 @@ const AppRoutes: React.FC = () => {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/" element={<GatewayLanding />} />
       <Route
         element={
           <ProtectedRoute>
@@ -29,7 +31,7 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/engine-comparison" element={<EngineComparisonPage />} />
         <Route path="/api-guide" element={<ApiGuidePage />} />
       </Route>
