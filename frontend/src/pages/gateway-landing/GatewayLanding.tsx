@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './GatewayLanding.css';
 
@@ -169,10 +169,6 @@ const GatewayLanding: React.FC = () => {
     const next = lockedToastFor(accessState);
     if (next) setToast(next);
   }, []);
-
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
 
   return (
     <div className="gateway-landing-root">
