@@ -197,7 +197,8 @@ class EngineMetadataIn(BaseModel):
 
 
 class FixResultIn(BaseModel):
-    issueNumber: int
+    # agent 경로는 issueNumber 필수, developer 경로(GitHub Actions footer 파싱)는 commitHash 로 dedup
+    issueNumber: int | None = None
     projectName: str
     sourceRunId: str | None = None
     priority: str
@@ -215,8 +216,14 @@ class FixResultIn(BaseModel):
     error: str | None = None
     retryCount: int = 0
     durationMs: int | None = None
-    startedAt: str
+    startedAt: str | None = None
     completedAt: str | None = None
+    # standards/qa/FIX_RESULT_REGISTRATION.md §3.1
+    fixSource: str = Field(default="agent", pattern="^(agent|developer)$")
+    discoveryMethod: str | None = None
+    actor: str | None = None
+    preventionRule: str | None = None
+    recurrence: str | None = None
 
 
 class FixResultItem(BaseModel):

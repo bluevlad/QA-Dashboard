@@ -24,7 +24,11 @@ def _parse_dt(value) -> datetime | None:
 
 
 async def upsert_fix_result(data: dict) -> int:
-    """수정 결과를 저장하거나 업데이트합니다 (project_name + issue_number 기준 upsert)."""
+    """수정 결과를 저장하거나 업데이트합니다.
+
+    - agent 경로 (issueNumber 있음): (project_name, issue_number) upsert
+    - developer 경로 (issueNumber 없음): (project_name, commit_hash) upsert
+    """
     pool = await get_pool()
     async with pool.acquire() as conn:
         # Engine 메타데이터 추출
@@ -34,8 +38,26 @@ async def upsert_fix_result(data: dict) -> int:
         engine_inference_ms = engine.get("inferenceMs")
         engine_metadata = json.dumps(engine) if engine else "{}"
 
+        issue_number = data.get("issueNumber")
+        commit_hash = data.get("commitHash")
+        fix_source = data.get("fixSource", "agent")
+
+        # developer 경로 가드: issueNumber 가 없으면 commitHash 가 있어야 dedup 가능
+        if issue_number is None and not commit_hash:
+            raise ValueError("issueNumber 또는 commitHash 중 하나는 반드시 있어야 합니다")
+
+        # started_at NOT NULL 보존: developer 경로처럼 startedAt 미전달 시 completedAt 또는 now() 사용
+        started_at = _parse_dt(data.get("startedAt")) or _parse_dt(data.get("completedAt")) or datetime.now(timezone.utc)
+        completed_at = _parse_dt(data.get("completedAt"))
+
+        conflict_target = (
+            "(project_name, issue_number) WHERE issue_number IS NOT NULL"
+            if issue_number is not None
+            else "(project_name, commit_hash) WHERE issue_number IS NULL AND commit_hash IS NOT NULL"
+        )
+
         row = await conn.fetchrow(
-            """
+            f"""
             INSERT INTO qa_fix_results (
                 issue_number, project_name, source_run_id,
                 priority, category, strategy, status,
@@ -43,7 +65,8 @@ async def upsert_fix_result(data: dict) -> int:
                 modified_files, verifications, compliance_score,
                 engine_type, engine_model, engine_inference_ms, engine_metadata,
                 error, retry_count, duration_ms,
-                started_at, completed_at
+                started_at, completed_at,
+                fix_source, discovery_method, actor, prevention_rule, recurrence
             ) VALUES (
                 $1, $2, $3,
                 $4, $5, $6, $7,
@@ -51,9 +74,10 @@ async def upsert_fix_result(data: dict) -> int:
                 $12::jsonb, $13::jsonb, $14,
                 $15, $16, $17, $18::jsonb,
                 $19, $20, $21,
-                $22, $23
+                $22, $23,
+                $24, $25, $26, $27, $28
             )
-            ON CONFLICT (project_name, issue_number) DO UPDATE SET
+            ON CONFLICT {conflict_target} DO UPDATE SET
                 source_run_id     = EXCLUDED.source_run_id,
                 priority          = EXCLUDED.priority,
                 category          = EXCLUDED.category,
@@ -74,10 +98,15 @@ async def upsert_fix_result(data: dict) -> int:
                 retry_count       = EXCLUDED.retry_count,
                 duration_ms       = EXCLUDED.duration_ms,
                 started_at        = EXCLUDED.started_at,
-                completed_at      = EXCLUDED.completed_at
+                completed_at      = EXCLUDED.completed_at,
+                fix_source        = EXCLUDED.fix_source,
+                discovery_method  = EXCLUDED.discovery_method,
+                actor             = EXCLUDED.actor,
+                prevention_rule   = EXCLUDED.prevention_rule,
+                recurrence        = EXCLUDED.recurrence
             RETURNING id
             """,
-            data["issueNumber"],
+            issue_number,
             data["projectName"],
             data.get("sourceRunId"),
             data["priority"],
@@ -85,7 +114,7 @@ async def upsert_fix_result(data: dict) -> int:
             data["strategy"],
             data["status"],
             data.get("branchName"),
-            data.get("commitHash"),
+            commit_hash,
             data.get("prUrl"),
             data.get("prNumber"),
             json.dumps([f for f in data.get("modifiedFiles", [])]),
@@ -98,13 +127,19 @@ async def upsert_fix_result(data: dict) -> int:
             data.get("error"),
             data.get("retryCount", 0),
             data.get("durationMs"),
-            _parse_dt(data["startedAt"]),
-            _parse_dt(data.get("completedAt")),
+            started_at,
+            completed_at,
+            fix_source,
+            data.get("discoveryMethod"),
+            data.get("actor"),
+            data.get("preventionRule"),
+            data.get("recurrence"),
         )
         fix_id = row["id"]
 
-        # lifecycle_tracking 자동 업데이트
-        await _update_lifecycle(conn, data, fix_id)
+        # lifecycle_tracking: issue_number 있는 agent 경로에서만 갱신 (developer fix 는 detection 이벤트 페어 없음)
+        if issue_number is not None:
+            await _update_lifecycle(conn, data, fix_id)
 
         return fix_id
 
