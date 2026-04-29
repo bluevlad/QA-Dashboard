@@ -156,11 +156,31 @@ TABLES_DDL = [
     "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS engine_model VARCHAR",
     "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS engine_inference_ms INTEGER",
     "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS engine_metadata JSONB DEFAULT '{}'::jsonb",
+    # Fix source / discovery 컬럼 (standards/qa/FIX_RESULT_REGISTRATION.md §3)
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS fix_source VARCHAR(16) NOT NULL DEFAULT 'agent'",
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS discovery_method VARCHAR(32)",
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS actor VARCHAR(128)",
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS prevention_rule TEXT",
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS recurrence VARCHAR(32)",
+    # developer fix 는 issue_number 없을 수 있음 → NOT NULL 해제 (이미 적용됐으면 no-op)
+    "ALTER TABLE qa_fix_results ALTER COLUMN issue_number DROP NOT NULL",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_engine ON qa_fix_results(engine_type)",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_project ON qa_fix_results(project_name)",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_issue ON qa_fix_results(issue_number)",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_status ON qa_fix_results(status)",
-    "CREATE UNIQUE INDEX IF NOT EXISTS idx_fix_results_proj_issue ON qa_fix_results(project_name, issue_number)",
+    "CREATE INDEX IF NOT EXISTS idx_fix_results_source ON qa_fix_results(fix_source)",
+    # UNIQUE: agent(issue_number 있음) / developer(issue_number NULL → commit_hash) 두 경로를 분리
+    "DROP INDEX IF EXISTS idx_fix_results_proj_issue",
+    """
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_fix_results_issue
+        ON qa_fix_results(project_name, issue_number)
+        WHERE issue_number IS NOT NULL
+    """,
+    """
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_fix_results_commit
+        ON qa_fix_results(project_name, commit_hash)
+        WHERE issue_number IS NULL AND commit_hash IS NOT NULL
+    """,
     # ── Lifecycle Tracking: 점검 → 수정 → 확인 추적 ──
     """
     CREATE TABLE IF NOT EXISTS qa_lifecycle_tracking (
