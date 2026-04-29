@@ -35,32 +35,51 @@ jobs:
           git config user.email "prod-sync-bot@unmong.com"
           git fetch origin main prod
 
-      - name: Detect prod-only non-merge commits (patch-id 기준)
+      - name: Detect prod-only commits not yet on main
         id: detect
         run: |
           set -euo pipefail
-          # `git cherry` 는 patch-id 로 비교 → 이미 main 에 흘러간 커밋은 자동 제외
-          ALL=$(git cherry origin/main origin/prod | awk '$1=="+"{print $2}')
-          if [ -z "$ALL" ]; then
+          # 1) prod 에만 있는 non-merge commit hash 추출
+          PROD_ONLY=$(git log --no-merges --pretty=%H origin/main..origin/prod)
+          if [ -z "$PROD_ONLY" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::main is up-to-date with prod (patch-id 기준), nothing to sync"
+            echo "::notice::no prod-only non-merge commits, nothing to sync"
             exit 0
           fi
 
-          # merge commit 제외 (parent 2 개 이상)
+          # 2) main 의 최근 non-merge commit 들 patch-id 사전 (lookback 300)
+          MAIN_PIDS=$(git log -300 --no-merges --pretty=%H origin/main | \
+            while read m; do
+              git show "$m" 2>/dev/null | git patch-id 2>/dev/null | awk '{print $1}'
+            done | sort -u)
+
+          # 3) 각 prod-only commit 검사:
+          #    (a) main commit message 에 'cherry picked from commit <hash>' trail 이 있으면 skip
+          #    (b) patch-id 가 main 사전에 있으면 skip
+          #    (c) 둘 다 없으면 cherry-pick 대상
           NEED=""
           while IFS= read -r c; do
             [ -z "$c" ] && continue
-            if git rev-parse --verify "${c}^2" >/dev/null 2>&1; then
-              echo "::notice::skipping merge commit $c"
+
+            # (a) cherry-pick(-x) trail
+            if git log origin/main --grep="cherry picked from commit $c" --pretty=%H | head -1 | grep -q .; then
+              echo "::notice::skip $c (already on main via cherry-pick -x trail)"
               continue
             fi
+
+            # (b) patch-id 비교
+            PID=$(git show "$c" 2>/dev/null | git patch-id 2>/dev/null | awk '{print $1}')
+            if [ -n "$PID" ] && echo "$MAIN_PIDS" | grep -Fxq "$PID"; then
+              echo "::notice::skip $c (patch-id match found in main lookback)"
+              continue
+            fi
+
             NEED="${NEED}${c}"$'\n'
-          done <<< "$ALL"
+          done <<< "$PROD_ONLY"
 
           if [ -z "${NEED//[$'\n ']/}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::only merge commits found in prod-only diff, skipping"
+            echo "::notice::all prod-only commits already represented on main, nothing to sync"
             exit 0
           fi
 
