@@ -162,6 +162,7 @@ TABLES_DDL = [
     "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS actor VARCHAR(128)",
     "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS prevention_rule TEXT",
     "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS recurrence VARCHAR(32)",
+    "ALTER TABLE qa_fix_results ADD COLUMN IF NOT EXISTS affected_layer VARCHAR(64)",
     # developer fix 는 issue_number 없을 수 있음 → NOT NULL 해제 (이미 적용됐으면 no-op)
     "ALTER TABLE qa_fix_results ALTER COLUMN issue_number DROP NOT NULL",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_engine ON qa_fix_results(engine_type)",
@@ -169,6 +170,7 @@ TABLES_DDL = [
     "CREATE INDEX IF NOT EXISTS idx_fix_results_issue ON qa_fix_results(issue_number)",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_status ON qa_fix_results(status)",
     "CREATE INDEX IF NOT EXISTS idx_fix_results_source ON qa_fix_results(fix_source)",
+    "CREATE INDEX IF NOT EXISTS idx_fix_results_layer ON qa_fix_results(affected_layer)",
     # UNIQUE: agent(issue_number 있음) / developer(issue_number NULL → commit_hash) 두 경로를 분리
     "DROP INDEX IF EXISTS idx_fix_results_proj_issue",
     """
