@@ -66,7 +66,8 @@ async def upsert_fix_result(data: dict) -> int:
                 engine_type, engine_model, engine_inference_ms, engine_metadata,
                 error, retry_count, duration_ms,
                 started_at, completed_at,
-                fix_source, discovery_method, actor, prevention_rule, recurrence
+                fix_source, discovery_method, actor, prevention_rule, recurrence,
+                affected_layer
             ) VALUES (
                 $1, $2, $3,
                 $4, $5, $6, $7,
@@ -75,7 +76,8 @@ async def upsert_fix_result(data: dict) -> int:
                 $15, $16, $17, $18::jsonb,
                 $19, $20, $21,
                 $22, $23,
-                $24, $25, $26, $27, $28
+                $24, $25, $26, $27, $28,
+                $29
             )
             ON CONFLICT {conflict_target} DO UPDATE SET
                 source_run_id     = EXCLUDED.source_run_id,
@@ -103,7 +105,8 @@ async def upsert_fix_result(data: dict) -> int:
                 discovery_method  = EXCLUDED.discovery_method,
                 actor             = EXCLUDED.actor,
                 prevention_rule   = EXCLUDED.prevention_rule,
-                recurrence        = EXCLUDED.recurrence
+                recurrence        = EXCLUDED.recurrence,
+                affected_layer    = EXCLUDED.affected_layer
             RETURNING id
             """,
             issue_number,
@@ -134,6 +137,7 @@ async def upsert_fix_result(data: dict) -> int:
             data.get("actor"),
             data.get("preventionRule"),
             data.get("recurrence"),
+            data.get("affectedLayer"),
         )
         fix_id = row["id"]
 
