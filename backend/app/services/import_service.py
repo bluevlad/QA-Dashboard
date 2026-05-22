@@ -4,12 +4,18 @@ from datetime import datetime
 
 from app.core.database import get_pool
 from app.models.schemas import IngestRequest
+from app.services.project_filter import filter_ingest_to_target
 
 logger = logging.getLogger(__name__)
 
 
 async def ingest_run(data: IngestRequest) -> int:
-    """Ingest a single run into the database. Returns the DB id."""
+    """Ingest a single run into the database. Returns the DB id.
+
+    타깃 프로젝트(TARGET_PROJECT) 외 데이터는 저장 전에 필터링된다.
+    HTTP(/api/ingest)·파일 동기화 두 경로 모두 이 함수를 거친다.
+    """
+    data = filter_ingest_to_target(data)
     pool = await get_pool()
     async with pool.acquire() as conn:
         async with conn.transaction():

@@ -12,6 +12,7 @@ from app.services.fix_service import (
     update_lifecycle_verification,
     upsert_fix_result,
 )
+from app.services.project_filter import assert_target_project
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ router = APIRouter(tags=["Fix Results & Lifecycle"])
 @router.post("/fix-results")
 async def post_fix_result(req: FixResultIn, _=Depends(verify_api_key)):
     """Auto-Tobe-Agent가 수정 결과를 전송합니다."""
+    assert_target_project(req.projectName)
     data = req.model_dump()
     fix_id = await upsert_fix_result(data)
     return {
@@ -90,6 +92,7 @@ async def verify_lifecycle(
     _=Depends(verify_api_key),
 ):
     """QA Agent 재점검 결과로 lifecycle 상태를 업데이트합니다."""
+    assert_target_project(project)
     updated = await update_lifecycle_verification(
         project_name=project,
         issue_number=issue_number,
