@@ -61,7 +61,7 @@ const TECH_STACK: Tech[] = [
 
 interface Connected { name: string; role: string; href: string; dot: string; }
 const CONNECTED_SERVICES: Connected[] = [
-  { name: 'AllergyInsight', role: '테스트 대상', href: 'https://allergy.unmong.com', dot: '#f43f5e' },
+  { name: 'AllergyInsight', role: '테스트 대상', href: 'https://allergyinsight.unmong.com', dot: '#f43f5e' },
   { name: 'EduFit', role: '테스트 대상', href: 'https://edufit.unmong.com', dot: '#22c55e' },
   { name: 'HopenVision', role: '테스트 대상', href: 'https://hopenvision.unmong.com', dot: '#3b82f6' },
   { name: 'NewsLetterPlatform', role: '테스트 대상', href: 'https://newsletter.unmong.com', dot: '#ec4899' },
