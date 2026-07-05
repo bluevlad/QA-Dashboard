@@ -13,9 +13,10 @@ class Settings(BaseSettings):
     # API Key for ingest authentication
     API_KEY: str = "qa-agent-secret-key"
 
-    # 단일 프로젝트 연동 제한 — QA/To-be Agent 연동을 이 프로젝트로만 한정.
-    # 빈 문자열이면 제한 없음(기존 다중 프로젝트 동작).
-    TARGET_PROJECT: str = "hopenvision"
+    # 프로젝트 스코프 — 값이 있으면 그 프로젝트만 허용, 빈 문자열이면 전체 허용(멀티프로젝트).
+    # SkillRadar 중심 다중 서비스 fix 중앙 수집을 위해 기본 멀티프로젝트. hopenvision 은 레거시.
+    # (단일 프로젝트 대시보드로 쓰려면 env QA_DASHBOARD_TARGET_PROJECT 로 지정)
+    TARGET_PROJECT: str = ""
 
     # Log directory (mounted volume)
     LOG_DIR: str = "/app/logs"
